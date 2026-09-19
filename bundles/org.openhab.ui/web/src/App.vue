@@ -58,7 +58,7 @@
             panel-close
             @click="appMenuItemSelected(item)">
             <template v-if="item.icon" #media>
-              <f7-icon :f7="item.icon" />
+              <f7-icon :ios="item.icon" :aurora="item.icon" :md="item.icon" />
             </template>
           </f7-list-item>
         </f7-list>
