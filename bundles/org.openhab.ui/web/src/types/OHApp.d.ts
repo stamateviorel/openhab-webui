@@ -17,7 +17,7 @@ interface OHApp {
 interface OHAppMenuItem {
   id: string
   title: string
-  /** Framework7 icon name */
+  /** Icon with its font as prefix, e.g. f7:bell or material:notifications */
   icon?: string
   active?: boolean
   badge?: string
