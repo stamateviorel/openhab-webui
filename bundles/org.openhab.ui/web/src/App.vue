@@ -42,6 +42,27 @@
           </f7-list-item>
         </f7-list>
 
+        <!-- Entries provided by the native app -->
+        <f7-block-title v-if="runtimeStore.appMenu">
+          {{ runtimeStore.appMenu.title }}
+        </f7-block-title>
+        <f7-list v-if="runtimeStore.appMenu" class="admin-links">
+          <f7-list-item
+            v-for="item in runtimeStore.appMenu.items"
+            :key="item.id"
+            link="#"
+            :title="item.title"
+            :badge="item.badge"
+            :class="{ currentsection: item.active }"
+            no-chevron
+            panel-close
+            @click="appMenuItemSelected(item)">
+            <template v-if="item.icon" #media>
+              <f7-icon :f7="item.icon" />
+            </template>
+          </f7-list-item>
+        </f7-list>
+
         <!-- Chat -->
         <f7-list class="admin-links">
           <f7-list-item link="/chat" :title="t('chat.title')" no-chevron panel-close :class="{ currentsection: currentPath.chat }">
@@ -807,6 +828,40 @@ export default {
     }
   },
   methods: {
+    /**
+     * Called by native apps to add their own entries to the sidebar.
+     * @param {string|object|null} menu { title, items: [{ id, title, icon?, active?, badge? }] }, null to remove the entries
+     */
+    setAppMenu(menu) {
+      const runtimeStore = useRuntimeStore()
+      try {
+        const parsed = typeof menu === 'string' ? JSON.parse(menu) : menu
+        if (!parsed || !Array.isArray(parsed.items) || !parsed.items.length) {
+          runtimeStore.appMenu = null
+          return
+        }
+        runtimeStore.appMenu = {
+          title: String(parsed.title || ''),
+          items: parsed.items
+            .filter((item) => item && item.id !== undefined && item.title)
+            .map((item) => ({
+              id: String(item.id),
+              title: String(item.title),
+              icon: item.icon ? String(item.icon) : undefined,
+              active: item.active === true,
+              badge: item.badge ? String(item.badge) : undefined
+            }))
+        }
+      } catch (e) {
+        console.warn('Invalid app menu: ' + e)
+        runtimeStore.appMenu = null
+      }
+    },
+    appMenuItemSelected(item) {
+      if (typeof window.OHApp?.menuItemSelected === 'function') {
+        window.OHApp.menuItemSelected(item.id)
+      }
+    },
     refreshLogDockLayout() {
       const mainViewEl = document.querySelector('.view-main.safe-areas')
       if (!mainViewEl) {
@@ -1206,10 +1261,16 @@ export default {
         try {
           window.OHApp.goFullscreen()
         } catch {}
-        // expose external calls
-        window.MainUI = {
-          handleCommand: this.handleCommand
-        }
+      }
+      // expose external calls
+      window.MainUI = {
+        handleCommand: this.handleCommand,
+        setAppMenu: this.setAppMenu
+      }
+      if (typeof window.OHApp.menuReady === 'function') {
+        try {
+          window.OHApp.menuReady()
+        } catch {}
       }
     }
 

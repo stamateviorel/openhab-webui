@@ -8,6 +8,24 @@ interface OHApp {
   pinToHome?: () => void
   getBasicCredentialsUsername?: () => string
   getBasicCredentialsPassword?: () => string
+  /** Main UI is ready to take the app's menu entries via window.MainUI.setAppMenu() */
+  menuReady?: () => void
+  /** An entry provided via window.MainUI.setAppMenu() was selected */
+  menuItemSelected?: (id: string) => void
+}
+
+interface OHAppMenuItem {
+  id: string
+  title: string
+  /** Framework7 icon name */
+  icon?: string
+  active?: boolean
+  badge?: string
+}
+
+interface OHAppMenu {
+  title: string
+  items: OHAppMenuItem[]
 }
 
 interface Window {
