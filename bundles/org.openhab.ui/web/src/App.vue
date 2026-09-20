@@ -52,6 +52,7 @@
             :key="item.id"
             link="#"
             :title="item.title"
+            :after="item.label"
             :badge="item.badge"
             :class="{ currentsection: item.active }"
             no-chevron
@@ -830,7 +831,7 @@ export default {
   methods: {
     /**
      * Called by native apps to add their own entries to the sidebar.
-     * @param {string|object|null} menu { title, items: [{ id, title, icon?, active?, badge? }] }, null to remove the entries
+     * @param {string|object|null} menu { title, items: [{ id, title, icon?, label?, active?, badge? }] }, null to remove the entries
      */
     setAppMenu(menu) {
       const runtimeStore = useRuntimeStore()
@@ -848,6 +849,7 @@ export default {
               id: String(item.id),
               title: String(item.title),
               icon: item.icon ? String(item.icon) : undefined,
+              label: item.label ? String(item.label) : undefined,
               active: item.active === true,
               badge: item.badge ? String(item.badge) : undefined
             }))
