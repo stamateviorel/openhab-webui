@@ -19,10 +19,12 @@ interface OHAppMenuItem {
   title: string
   /** Icon with its font as prefix, e.g. f7:bell or material:notifications */
   icon?: string
-  /** Short text telling what kind of entry this is, e.g. Sitemap */
-  label?: string
+  /** Small text below the title, e.g. what kind of entry this is */
+  footer?: string
   active?: boolean
   badge?: string
+  /** Makes this entry an expandable group (one level only); groups are not reported via menuItemSelected() */
+  children?: OHAppMenuItem[]
 }
 
 interface OHAppMenu {
