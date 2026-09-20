@@ -47,21 +47,43 @@
           {{ runtimeStore.appMenu.title }}
         </f7-block-title>
         <f7-list v-if="runtimeStore.appMenu" class="admin-links">
-          <f7-list-item
-            v-for="item in runtimeStore.appMenu.items"
-            :key="item.id"
-            link="#"
-            :title="item.title"
-            :after="item.label"
-            :badge="item.badge"
-            :class="{ currentsection: item.active }"
-            no-chevron
-            panel-close
-            @click="appMenuItemSelected(item)">
-            <template v-if="item.icon" #media>
-              <f7-icon :ios="item.icon" :aurora="item.icon" :md="item.icon" />
-            </template>
-          </f7-list-item>
+          <template v-for="item in runtimeStore.appMenu.items" :key="item.id">
+            <f7-list-item
+              link="#"
+              :title="item.title"
+              :footer="item.footer"
+              :badge="item.badge"
+              :class="{ currentsection: item.active }"
+              :panel-close="!item.children"
+              no-chevron
+              @click="appMenuItemSelected(item)">
+              <template v-if="item.icon" #media>
+                <f7-icon :ios="item.icon" :aurora="item.icon" :md="item.icon" color="gray" />
+              </template>
+              <template v-if="item.children" #after>
+                <f7-icon class="section-toggle" :f7="isOpen('app:' + item.id) ? 'chevron_up' : 'chevron_down'" />
+              </template>
+            </f7-list-item>
+            <li v-if="item.children && isOpen('app:' + item.id)">
+              <ul class="menu-sublinks">
+                <f7-list-item
+                  v-for="child in item.children"
+                  :key="child.id"
+                  link="#"
+                  :title="child.title"
+                  :footer="child.footer"
+                  :badge="child.badge"
+                  :class="{ currentsection: child.active }"
+                  panel-close
+                  no-chevron
+                  @click="appMenuItemSelected(child)">
+                  <template v-if="child.icon" #media>
+                    <f7-icon :ios="child.icon" :aurora="child.icon" :md="child.icon" color="gray" />
+                  </template>
+                </f7-list-item>
+              </ul>
+            </li>
+          </template>
         </f7-list>
 
         <!-- Chat -->
@@ -831,35 +853,41 @@ export default {
   methods: {
     /**
      * Called by native apps to add their own entries to the sidebar.
-     * @param {string|object|null} menu { title, items: [{ id, title, icon?, label?, active?, badge? }] }, null to remove the entries
+     * @param {string|object|null} menu { title, items: [{ id, title, icon?, footer?, active?, badge?, children? }] }, null to remove the entries
      */
     setAppMenu(menu) {
       const runtimeStore = useRuntimeStore()
+      const toItem = (item, allowChildren) => {
+        const children = allowChildren && Array.isArray(item.children) ? toItems(item.children, false) : []
+        return {
+          id: String(item.id),
+          title: String(item.title),
+          icon: item.icon ? String(item.icon) : undefined,
+          footer: item.footer ? String(item.footer) : undefined,
+          active: item.active === true,
+          badge: item.badge ? String(item.badge) : undefined,
+          children: children.length ? children : undefined
+        }
+      }
+      const toItems = (items, allowChildren) =>
+        items.filter((item) => item && item.id !== undefined && item.title).map((item) => toItem(item, allowChildren))
       try {
         const parsed = typeof menu === 'string' ? JSON.parse(menu) : menu
         if (!parsed || !Array.isArray(parsed.items) || !parsed.items.length) {
           runtimeStore.appMenu = null
           return
         }
-        runtimeStore.appMenu = {
-          title: String(parsed.title || ''),
-          items: parsed.items
-            .filter((item) => item && item.id !== undefined && item.title)
-            .map((item) => ({
-              id: String(item.id),
-              title: String(item.title),
-              icon: item.icon ? String(item.icon) : undefined,
-              label: item.label ? String(item.label) : undefined,
-              active: item.active === true,
-              badge: item.badge ? String(item.badge) : undefined
-            }))
-        }
+        runtimeStore.appMenu = { title: String(parsed.title || ''), items: toItems(parsed.items, true) }
       } catch (e) {
         console.warn('Invalid app menu: ' + e)
         runtimeStore.appMenu = null
       }
     },
     appMenuItemSelected(item) {
+      if (item.children) {
+        this.toggleSection('app:' + item.id)
+        return
+      }
       if (typeof window.OHApp?.menuItemSelected === 'function') {
         window.OHApp.menuItemSelected(item.id)
       }
